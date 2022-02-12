@@ -30,5 +30,6 @@ SRC_URI[sha256sum] = "4622bf77bb58d316ad939296667802e4da5fee3eeb6c4885c79f2f8550
 SRC_URI = "git://github.com/megous/linux.git;protocol=git;branch=${BRANCH} \
 		file://5.8-001-modify-sun8i-v3s.dtsi.patch \
 		file://5.8-002-cherry-pi-dts-add.patch \
+		file://5.8-003-add-esp8089-sdio-wifi.patch \
         file://defconfig \
         "

@@ -132,10 +132,10 @@ index 0000000..e331075
 +};
 diff --git b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
 new file mode 100644
-index 0000000..8f04a54
+index 0000000..01b57d9
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,152 @@
 +/*
 + * Copyright (C) 2016 Icenowy Zheng <icenowy@aosc.xyz>
 + *
@@ -246,3 +246,46 @@ index 0000000..8f04a54
 +	allwinner,leds-active-low;
 +  status = "okay";
 +};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "okay";
++
++	flash: mx35lf1ge4ab@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "macronix,mx35lf1ge4ab", "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		partitions {
++			compatible = "fixed-partitions";
++            #address-cells = <1>;
++            #size-cells = <1>;
++
++            partition@0 {
++                label = "u-boot";
++                reg = <0x000000 0x70000>;
++                read-only;
++            };
++
++            partition@70000 {
++                label = "dtb";
++                reg = <0x70000 0x10000>;
++                read-only;
++            };
++
++            partition@80000 {
++                label = "kernel";
++                reg = <0x80000 0x420000>;
++                read-only;
++            };
++
++            partition@4A0000 {
++                label = "rootfs";
++                reg = <0x4A0000 0xB80000>;
++            };
++		};
++	};
++};
+\ No newline at end of file
