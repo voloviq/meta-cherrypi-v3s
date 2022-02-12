@@ -1,0 +1,36 @@
+#!/bin/sh
+
+PART_DEV="mmcblk0"
+PART_NUM=2
+echo "Partition name is : $PART_DEV"
+# Get the starting offset of the root partition
+PART_START=$(parted /dev/mmcblk0 -ms unit s p | tail -n 1 | cut -f 2 -d:)
+# Remove suffix:
+PART_START=${PART_START%s}
+echo "resizing root partition, starts at offset: $PART_START"
+[ "$PART_START" ] || return 5
+
+# Return value will likely be error for fdisk as it fails to reload the
+# partition table because the root fs is mounted
+fdisk -u /dev/${PART_DEV} <<EOF > /dev/null 2>&1
+
+p
+d
+$PART_NUM
+n
+p
+$PART_NUM
+$PART_START
+
+p
+w
+EOF
+
+sync
+echo "Probing the partition table... "
+partprobe
+
+echo "Resizing the partition... "
+resize2fs /dev/mmcblk0p2   || return $?
+
+exit 0
