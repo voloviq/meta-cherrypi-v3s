@@ -1,0 +1,248 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index e6a1cac..14acd04 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1188,6 +1188,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-t3-cqa3t-bv3.dtb \
+ 	sun8i-v3s-licheepi-zero.dtb \
+ 	sun8i-v3s-licheepi-zero-dock.dtb \
++	sun8i-v3s-cherrypi.dtb \
+ 	sun8i-v40-bananapi-m2-berry.dtb
+ dtb-$(CONFIG_MACH_SUN9I) += \
+ 	sun9i-a80-optimus.dtb \
+diff --git b/arch/arm/boot/dts/cherrypi_v3s_lcd_display.dtsi b/arch/arm/boot/dts/cherrypi_v3s_lcd_display.dtsi
+new file mode 100644
+index 0000000..95d20f9
+--- /dev/null
++++ b/arch/arm/boot/dts/cherrypi_v3s_lcd_display.dtsi
+@@ -0,0 +1,81 @@
++/**
++*    @mainpage Dts for LCD TFT 800x480 Cherry Pi V3s
++*
++*    @author Michal Wolowik Sofjan
++*    @date Warsaw 12/II/2022
++*
++*    @copyright
++*        This library is free software; you can redistribute it and/or
++*        modify it under the terms of the GNU Lesser General Public
++*        License as published by the Free Software Foundation; either
++*        version 2.1 of the License, or (at your option) any later version.
++*    @copyright
++*        This library is distributed in the hope that it will be useful,
++*        but WITHOUT ANY WARRANTY; without even the implied warranty of
++*        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++*        Lesser General Public License for more details.
++*/
++#include "sun8i-v3s.dtsi"
++#include "sunxi-common-regulators.dtsi"
++
++/ {
++
++vdd_bl: regulator@0 {
++	compatible = "regulator-fixed";
++	regulator-name = "bl-3v3";
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	regulator-always-on;
++};
++
++backlight: backlight {
++	compatible = "pwm-backlight";
++	pwms = <&pwm 0 50000 0>;
++	brightness-levels = <50 55 60 65 70 75 80 85 90 95 100>;
++	default-brightness-level = <8>;
++	power-supply = <&vdd_bl>;
++	status = "okay";
++};
++
++panel: panel {
++	compatible = "rocktech,rk070er9427", "simple-panel";
++	power-supply = <&vdd_bl>;
++	backlight = <&backlight>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	port@0 {
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			panel_input: endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&tcon0_out_lcd>;
++			};
++		};
++	};
++};
++
++&de {
++	status = "okay";
++};
++
++&tcon0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&lcd_rgb666_pins>;
++	status = "okay";
++};
++
++&tcon0_out {
++	tcon0_out_lcd: endpoint@0 {
++		reg = <0>;
++		remote-endpoint = <&panel_input>;
++	};
++};
++
++&pwm {
++	pinctrl-0 = <&pwm0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+diff --git b/arch/arm/boot/dts/cherrypi_v3s_lcd_touchscreen.dtsi b/arch/arm/boot/dts/cherrypi_v3s_lcd_touchscreen.dtsi
+new file mode 100644
+index 0000000..e331075
+--- /dev/null
++++ b/arch/arm/boot/dts/cherrypi_v3s_lcd_touchscreen.dtsi
+@@ -0,0 +1,27 @@
++/**
++*    @mainpage Dts for the Cherrypi V3s Touchscreen
++*
++*    @author Michal Wolowik Sofjan
++*    @date Warsaw 12/II/2022
++*
++*    @copyright
++*        This library is free software; you can redistribute it and/or
++*        modify it under the terms of the GNU Lesser General Public
++*        License as published by the Free Software Foundation; either
++*        version 2.1 of the License, or (at your option) any later version.
++*    @copyright
++*        This library is distributed in the hope that it will be useful,
++*        but WITHOUT ANY WARRANTY; without even the implied warranty of
++*        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++*        Lesser General Public License for more details.
++*/
++
++&i2c0 {
++	status = "okay";
++	ns2009: touchscreen@48 {
++		compatible = "nsiway,ns2009";
++		reg = <0x48>;
++		touchscreen-fuzz-x = <8>;
++		touchscreen-fuzz-y = <8>;
++	};
++};
+diff --git b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
+new file mode 100644
+index 0000000..8f04a54
+--- /dev/null
++++ b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
+@@ -0,0 +1,110 @@
++/*
++ * Copyright (C) 2016 Icenowy Zheng <icenowy@aosc.xyz>
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is free software; you can redistribute it and/or
++ *     modify it under the terms of the GNU General Public License as
++ *     published by the Free Software Foundation; either version 2 of the
++ *     License, or (at your option) any later version.
++ *
++ *     This file is distributed in the hope that it will be useful,
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ * Or, alternatively,
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use,
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++/dts-v1/;
++#include "sun8i-v3s.dtsi"
++#include "sunxi-common-regulators.dtsi"
++#include "cherrypi_v3s_lcd_display.dtsi"
++#include "cherrypi_v3s_lcd_touchscreen.dtsi"
++
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Cherry Pi v3s";
++	compatible = "cherrypi", "cherrypi",
++		     "allwinner,sun8i-v3s";
++
++ 	aliases {
++		ethernet0 = &emac;
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&mmc0 {
++	broken-cd;
++	bus-width = <4>;
++	vmmc-supply = <&reg_vcc3v3>;
++	status = "okay";
++};
++
++&mmc1 {
++	broken-cd;
++	bus-width = <4>;
++	vmmc-supply = <&reg_vcc3v3>;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-0 = <&uart0_pb_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&usb_otg {
++	dr_mode = "otg";
++	status = "okay";
++};
++
++&usbphy {
++	usb0_id_det-gpios = <&pio 5 6 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&codec {
++	allwinner,audio-routing =
++	"Headphone", "HP",
++	"Headphone", "HPCOM",
++	"MIC1", "Mic",
++	"Mic",  "HBIAS";
++	status = "okay";
++};
++
++&emac {
++	phy-handle = <&int_mii_phy>;
++	phy-mode = "mii";
++	allwinner,leds-active-low;
++  status = "okay";
++};
