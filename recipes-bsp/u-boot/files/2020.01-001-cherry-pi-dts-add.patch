@@ -754,7 +754,7 @@ index ebefc0f..21daaeb 100644
  			      <0x01c84000 0x2000>,
 diff --git b/configs/cherrpi-v3s_defconfig b/configs/cherrpi-v3s_defconfig
 new file mode 100644
-index 0000000..2dcb5da
+index 0000000..847d098
 --- /dev/null
 +++ b/configs/cherrpi-v3s_defconfig
 @@ -0,0 +1,71 @@
@@ -808,6 +808,7 @@ index 0000000..2dcb5da
 +CONFIG_SPI_FLASH_USE_4K_SECTORS=y
 +CONFIG_SPI_FLASH_MTD=y
 +CONFIG_SPL_SPI_FLASH_MTD=y
++CONFIG_SPL_MTD_SUPPORT=y
 +
 +#
 +# Filesystem commands
@@ -818,10 +819,9 @@ index 0000000..2dcb5da
 +CONFIG_CMD_FAT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_MTDPARTS=y
-+CONFIG_MTDIDS_DEFAULT="nand0=nand.0"
-+CONFIG_MTDPARTS_DEFAULT="mtdparts=nand.0:1m(u-boot),"	\
-+ 					"-(ubi)"
-+
++CONFIG_MTDIDS_DEFAULT="nand0=sunxi-nand.0"
++CONFIG_MTDPARTS_DEFAULT="mtdparts=sunxi-nand.0:4m(spl),4m(spl-backup),4m(uboot),4m(env),-(UBI)"
++CONFIG_NAND_SUNXI=y
 +
 +CONFIG_BOOTDELAY=0
 +CONFIG_USE_BOOTARGS=y
