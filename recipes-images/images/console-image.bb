@@ -1,4 +1,4 @@
-DESCRIPTION = "A console image for the Cherrypi V3s"
+DESCRIPTION = "A console image for Cherry Pi"
 LICENSE = "MIT"
 
 NETWORK_APP = " \
@@ -11,7 +11,11 @@ inherit core-image
 
 SYSTEM_TOOLS_INSTALL = " \
     i2c-tools \
+    memtester \
+    sysbench \
     tzdata \
+    devmem2 \
+    minicom \
 "
 
 KERNEL_EXTRA_INSTALL = " \
@@ -28,24 +32,32 @@ UTILITIES_INSTALL = " \
     libstdc++-dev \
     openssh-sftp \
     resize-rootfs \
-    gpio \
+    ppp \
+    tzdata \
 "
 
-TSLIB = " \
-    tslib \
-    tslib-calibrate \
-    tslib-conf \
-    tslib-dev \
-    tslib-tests \
+WIFI_SUPPORT = " \
+    iw \
+    rtl8723bs-wireless \
+    wpa-supplicant \
+    bluez5 \
+    wpa-supplicant-passphrase \
+    wpa-supplicant-cli \
+    network-config-misc \
+    iproute2 \
+    iproute2-tc \
 "
 
 IMAGE_INSTALL += " \
-  ${NETWORK_APP} \
   ${SYSTEM_TOOLS_INSTALL} \
   ${UTILITIES_INSTALL} \
-  ${TSLIB} \
+  ${NETWORK_APP} \
+  ${WIFI_SUPPORT} \
   ${KERNEL_EXTRA_INSTALL} \
 "
 
 #Always add cmake to sdk
-TOOLCHAIN_HOST_TASK_append = " nativesdk-cmake"
+#TOOLCHAIN_HOST_TASK:append = " nativesdk-cmake"
+
+#DISTRO_FEATURES:remove = " x11 wayland opengl pulseaudio opengles egl xcb "
+PACKAGECONFIG_DISTRO:append_pn_qtbase = " linuxfb tslib "

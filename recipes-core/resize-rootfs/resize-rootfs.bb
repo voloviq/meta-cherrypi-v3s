@@ -1,6 +1,6 @@
 DESCRIPTION = "Resize Rootfs systemd service"
-LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
+LICENSE = "CLOSED"
+#LIC_FILES_CHKSUM = "file://Licenses/README;md5=5a7450c57ffe5ae63fd732446b988025"
 
 SRC_URI = "\
 	file://resize-rootfs.init \
@@ -16,7 +16,7 @@ inherit systemd
 
 SYSTEMD_SERVICE_${PN} = "resize-rootfs.service"
 
-RDEPENDS_${PN} = "e2fsprogs-resize2fs parted	"
+RDEPENDS_${PN} = "e2fsprogs-resize2fs parted "
 
 do_install () {
         install -d ${D}${bindir}

@@ -1,4 +1,4 @@
-DESCRIPTION = "A QT5 image with wifi support application for the Cherrypi V3s"
+DESCRIPTION = "A QT5 image with wifi support application for Cherry Pi"
 LICENSE = "MIT"
 
 NETWORK_APP = " \
@@ -21,6 +21,13 @@ SYSTEM_TOOLS_INSTALL = " \
     devmem2 \
     rsync \
     minicom \
+    alsa-lib \
+    alsa-plugins \
+    alsa-tools \
+    alsa-utils \
+    pulseaudio \
+    mpv \
+    vlc \
 "
 
 QT_TOOLS = " \
@@ -99,8 +106,5 @@ IMAGE_INSTALL += " \
   ${TSLIB} \
 "
 
-#Always add cmake to sdk
-TOOLCHAIN_HOST_TASK_append = " nativesdk-cmake"
-
-PACKAGECONFIG_DISTRO_append_pn_qtbase = " linuxfb tslib "
-IMAGE_INSTALL_append = " qtbase qtbase-plugins "
+PACKAGECONFIG_DISTRO:append_pn_qtbase = " linuxfb tslib "
+IMAGE_INSTALL:append = " qtbase qtbase-plugins "

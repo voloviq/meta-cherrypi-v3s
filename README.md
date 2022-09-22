@@ -38,11 +38,11 @@ TBD <br>
 	***mkdir yocto***<br>
 	***cd yocto*** <br>
 	***mkdir build*** <br>
-	***git clone git://git.yoctoproject.org/poky --depth 1 -b dunfell*** <br>
+	***git clone git://git.yoctoproject.org/poky --depth 1 -b kirkstone*** <br>
         ***cd poky*** <br>
-	***git clone git://git.openembedded.org/meta-openembedded --depth 1 -b dunfell*** <br>
-	***git clone https://github.com/meta-qt5/meta-qt5.git --depth 1 -b dunfell*** <br>
-	***git clone https://github.com/voloviq/meta-cherrypi-v3s --depth 1 -b dunfell*** <br>
+	***git clone git://git.openembedded.org/meta-openembedded --depth 1 -b kirkstone*** <br>
+	***git clone https://github.com/meta-qt5/meta-qt5.git --depth 1 -b kirkstone*** <br>
+	***git clone https://github.com/voloviq/meta-cherrypi-v3s --depth 1 -b kirkstone*** <br>
 
 3. Select directory to build Linux
 
@@ -57,6 +57,7 @@ TBD <br>
       ${HOME}/yocto/poky/meta-openembedded/meta-oe \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-networking \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-python \\\
+      ${HOME}/yocto/poky/meta-openembedded/meta-multimedia \\\
       ${HOME}/yocto/poky/meta-qt5 \\\
       ${HOME}/yocto/poky/meta-cherrypi-v3s \\\
       "*<br>
@@ -75,7 +76,10 @@ TBD <br>
     
     - add at the end following records <br> <br>
     	*RM_OLD_IMAGE = "1"* <br>
-	    *INHERIT += "rm_work"* <br>
+	*INHERIT += "rm_work"* <br>
+	*MACHINEOVERRIDES .= ":use-mailine-graphics"* <br>
+	*LICENSE_FLAGS_ACCEPTED = "commercial"* <br>
+	
     - for spi flash change DISTRO ?= "poky" to DISTRO ?= "cherrypi-v3s-tiny" <br>
 
     **Note:** Please adapt rest of conf/local.conf parameters if necessary. <br>

@@ -1,9 +1,9 @@
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index e6a1cac..14acd04 100644
+index 27ca1ca..a9fe381 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -1188,6 +1188,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
- 	sun8i-t3-cqa3t-bv3.dtb \
+@@ -1278,6 +1278,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-v3-sl631-imx179.dtb \
  	sun8i-v3s-licheepi-zero.dtb \
  	sun8i-v3s-licheepi-zero-dock.dtb \
 +	sun8i-v3s-cherrypi.dtb \
@@ -132,10 +132,10 @@ index 0000000..e331075
 +};
 diff --git b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
 new file mode 100644
-index 0000000..01b57d9
+index 0000000..b2608ec
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun8i-v3s-cherrypi.dts
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,151 @@
 +/*
 + * Copyright (C) 2016 Icenowy Zheng <icenowy@aosc.xyz>
 + *
@@ -182,7 +182,6 @@ index 0000000..01b57d9
 +#include "sun8i-v3s.dtsi"
 +#include "sunxi-common-regulators.dtsi"
 +#include "cherrypi_v3s_lcd_display.dtsi"
-+#include "cherrypi_v3s_lcd_touchscreen.dtsi"
 +
 +#include <dt-bindings/input/input.h>
 +
@@ -288,4 +287,33 @@ index 0000000..01b57d9
 +		};
 +	};
 +};
-\ No newline at end of file
+diff --git a/arch/arm/boot/dts/sun8i-v3s.dtsi b/arch/arm/boot/dts/sun8i-v3s.dtsi
+index 084323d..47fc392 100644
+--- a/arch/arm/boot/dts/sun8i-v3s.dtsi
++++ b/arch/arm/boot/dts/sun8i-v3s.dtsi
+@@ -368,6 +368,25 @@
+ 				pins = "PE1";
+ 				function = "csi";
+ 			};
++			
++			lcd_rgb666_pins: lcd-rgb666-pins {
++				pins = "PE0", "PE1", "PE2", "PE3", "PE4",
++			       "PE5", "PE6", "PE7", "PE8", "PE9",
++			       "PE10", "PE11", "PE12", "PE13", "PE14",
++			       "PE15", "PE16", "PE17", "PE18", "PE19",
++			       "PE23", "PE24";
++			 	function = "lcd";
++		        };
++		        
++			pwm1_pins: pwm1-pins{
++				pins = "PB5";
++				function = "pwm1";
++			};
++
++			pwm0_pins: pwm0-pins {
++				pins = "PB4";
++				function = "pwm0";
++			};
+ 
+ 			i2c0_pins: i2c0-pins {
+ 				pins = "PB6", "PB7";
