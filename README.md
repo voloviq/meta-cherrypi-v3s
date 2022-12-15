@@ -123,6 +123,8 @@ TBD <br>
     ***sf probe 0***<br>
     ***sf erase 0 70000***<br>
     ***sunxi-fel -p spiflash-write 0 ~/yocto/tmp/deploy/images/cherrypi-v3s-spinor/core-image-minimal-cherrypi-v3s-spinor.sunxi-spinor***<br>
+    To write only u-boot...spl just type
+    ***sudo sunxi-fel -v uboot u-boot-sunxi-with-spl.bin***<br>
 
 11. How to handle GPIO from userfs - example (used PE3 as GPIO)<br>
 
