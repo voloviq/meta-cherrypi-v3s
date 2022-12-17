@@ -1,14 +1,16 @@
 diff --git b/configs/cherrpi-v3s_defconfig b/configs/cherrpi-v3s_defconfig
 new file mode 100644
-index 0000000..847d098
+index 0000000..f227a84
 --- /dev/null
 +++ b/configs/cherrpi-v3s_defconfig
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,73 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_SPL=y
 +CONFIG_SPL_SPI_SUNXI=y
++CONFIG_SPL_SPI_SUNXI_NAND=y
++CONFIG_SPL_SPI_SUNXI_NAND_USE_GENERIC2K_ON_UNKNOWN=y
 +CONFIG_MMC_SUNXI_SLOT_EXTRA=1
 +CONFIG_MACH_SUN8I_V3S=y
 +CONFIG_DRAM_CLK=360
@@ -75,4 +77,3 @@ index 0000000..847d098
 +CONFIG_USE_BOOTCOMMAND=y
 +#CONFIG_BOOTCOMMAND="sf probe 0 50000000;sf read 0x80c00000 0x70000 0x10000;sf read 0x80008000 0x80000 0x4C0000;bootm 0x80008000 - 0x80c00000"
 +CONFIG_CONSOLE_MUX=y
-\ No newline at end of file
