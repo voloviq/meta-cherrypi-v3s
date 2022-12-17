@@ -12,7 +12,9 @@ DEFAULT_PREFERENCE:sun8i = "1"
 DEFAULT_PREFERENCE:sun50i = "1"
 
 SRC_URI:append:sunxi = " \
-        file://2020.01-001-cherry-pi-dts-add.patch \
+        file://2022.01-001-cherry-pi-defconfig-add.patch \
+        file://2022.01-002-cherry-pi-dts-add.patch \
+        file://2022.01-003-cherry-pi-nand-spi-option-add.patch \
         file://boot.cmd \
 "
 

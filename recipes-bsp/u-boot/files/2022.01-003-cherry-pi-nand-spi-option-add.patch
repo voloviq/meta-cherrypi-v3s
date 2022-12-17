@@ -1,0 +1,1427 @@
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index 2c18cf0..eb87ab8 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -1015,11 +1015,11 @@ config SPL_STACK_R_ADDR
+ 	default 0x4fe00000 if SUN50I_GEN_H6
+ 
+ config SPL_SPI_SUNXI
+-	bool "Support for SPI Flash on Allwinner SoCs in SPL"
+-	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_R40 || MACH_SUN50I_H6
++	bool "Support for SPI (NOR) Flash on Allwinner SoCs in SPL"
++	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_R40 || MACH_SUN50I_H6 || MACH_SUN8I_V3S
+ 	help
+-	  Enable support for SPI Flash. This option allows SPL to read from
+-	  sunxi SPI Flash. It uses the same method as the boot ROM, so does
++	  Enable support for SPI-NOR Flash. This option allows SPL to read from
++	  sunxi SPI-NOR Flash. It uses the same method as the boot ROM, so does
+ 	  not need any extra configuration.
+ 
+ config PINE64_DT_SELECTION
+@@ -1031,6 +1031,9 @@ config PINE64_DT_SELECTION
+ 	  512MiB DRAM, and Pine A64+ has 1GiB or 2GiB. By selecting this
+ 	  option, the device tree selection code specific to Pine64 which
+ 	  utilizes the DRAM size will be enabled.
++	  
++source "arch/arm/mach-sunxi/spl/spi/Kconfig"
++
+ 
+ config PINEPHONE_DT_SELECTION
+ 	bool "Enable PinePhone device tree selection code"
+diff --git a/arch/arm/mach-sunxi/Makefile b/arch/arm/mach-sunxi/Makefile
+index 5d3fd70..c93f425 100644
+--- a/arch/arm/mach-sunxi/Makefile
++++ b/arch/arm/mach-sunxi/Makefile
+@@ -33,7 +33,7 @@ obj-$(CONFIG_DRAM_SUN8I_A23)	+= dram_sun8i_a23.o
+ obj-$(CONFIG_DRAM_SUN8I_A33)	+= dram_sun8i_a33.o
+ obj-$(CONFIG_DRAM_SUN8I_A83T)	+= dram_sun8i_a83t.o
+ obj-$(CONFIG_DRAM_SUN9I)	+= dram_sun9i.o
+-obj-$(CONFIG_SPL_SPI_SUNXI)	+= spl_spi_sunxi.o
++obj-$(CONFIG_SPL_SPI_SUNXI)	+= spl/spi/
+ obj-$(CONFIG_SUNXI_DRAM_DW)	+= dram_sunxi_dw.o
+ obj-$(CONFIG_SUNXI_DRAM_DW)	+= dram_timings/
+ obj-$(CONFIG_DRAM_SUN50I_H6)	+= dram_sun50i_h6.o
+diff --git b/arch/arm/mach-sunxi/spl/spi/Kconfig b/arch/arm/mach-sunxi/spl/spi/Kconfig
+new file mode 100644
+index 0000000..c1e884d
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/Kconfig
+@@ -0,0 +1,42 @@
++config SPL_SPI_SUNXI_NOR
++	bool "Support for SPI-NOR Flash on Allwinner SoCs in SPL"
++	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_R40 || MACH_SUN50I_H6 || MACH_SUN8I_V3S
++	default y
++	help
++	  Enable support for SPI-NOR Flash. This option allows SPL to read from
++	  sunxi SPI-NOR Flash. It uses the same method as the boot ROM, so does
++	  not need any extra configuration.
++	  
++config SPL_SPI_SUNXI_NAND
++	bool "Support for SPI-NAND Flash on Allwinner SoCs in SPL"
++	depends on MACH_SUN8I_V3S
++	help
++	  Enable support for SPI-NAND Flash. This option allows SPL to read from
++	  sunxi SPI-NAND Flash. It uses the same method as the boot ROM, so does
++	  not need any extra configuration.
++
++config SPL_SPI_SUNXI_NAND_USE_GENERIC2K_ON_UNKNOWN
++	bool "Generic SPI-NAND config with 2K page-size"
++	depends on SPL_SPI_SUNXI_NAND
++	default n
++	help
++	  If no known spi-nand is found, try with generic settings for spi-nand with a
++	  page-size of 2K.
++	  
++choice
++	prompt "SPI Clockdivider of Allwinner SoCs in SPL"
++	depends on SPL_SPI_SUNXI
++	---help---
++	Select which clock divider should be used for spi clock
++
++config SPL_SPI_SUNXI_DIV_4
++	bool "Clock / 4"
++
++config SPL_SPI_SUNXI_DIV_2
++	bool "Clock / 2"
++
++config SPL_SPI_SUNXI_DIV_NONE
++	bool "No clock divider"
++
++endchoice
++
+diff --git b/arch/arm/mach-sunxi/spl/spi/Makefile b/arch/arm/mach-sunxi/spl/spi/Makefile
+new file mode 100644
+index 0000000..b7b04bd
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/Makefile
+@@ -0,0 +1,16 @@
++# SPDX-License-Identifier: GPL-2.0+
++#
++# (C) Copyright 2020 Benedikt-Alexander Mokroß <u-boot at bamkrs.de>
++#
++# Based on some other Makefile
++# (C) Copyright 2000-2003
++# Wolfgang Denk, DENX Software Engineering, wd at denx.de.
++
++
++ifdef CONFIG_SPL_BUILD
++
++obj-$(CONFIG_SPL_SPI_SUNXI)	+= spl_spi_sunxi.o
++obj-$(CONFIG_SPL_SPI_SUNXI_NAND)	+= spl_spi_sunxi_nand.o
++obj-$(CONFIG_SPL_SPI_SUNXI_NOR)		+= spl_spi_sunxi_nor.o
++
++endif
+diff --git b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.c b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.c
+new file mode 100644
+index 0000000..7b16c14
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.c
+@@ -0,0 +1,150 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2016 Siarhei Siamashka <siarhei.siamashka at gmail.com>
++ */
++
++#include "spl_spi_sunxi.h"
++
++/*
++ * Allwinner A10/A20 SoCs were using pins PC0,PC1,PC2,PC23 for booting
++ * from SPI Flash, everything else is using pins PC0,PC1,PC2,PC3.
++ * The H6 uses PC0, PC2, PC3, PC5.
++ */
++void sunxi_spi0_pinmux_setup(unsigned int pin_function)
++{
++	/* All chips use PC0 and PC2. */
++	sunxi_gpio_set_cfgpin(SUNXI_GPC(0), pin_function);
++	sunxi_gpio_set_cfgpin(SUNXI_GPC(2), pin_function);
++
++	/* All chips except H6 use PC1, and only H6 uses PC5. */
++	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		sunxi_gpio_set_cfgpin(SUNXI_GPC(1), pin_function);
++	else
++		sunxi_gpio_set_cfgpin(SUNXI_GPC(5), pin_function);
++
++	/* Older generations use PC23 for CS, newer ones use PC3. */
++	if (IS_ENABLED(CONFIG_MACH_SUN4I) || IS_ENABLED(CONFIG_MACH_SUN7I) ||
++	    IS_ENABLED(CONFIG_MACH_SUN8I_R40))
++		sunxi_gpio_set_cfgpin(SUNXI_GPC(23), pin_function);
++	else
++		sunxi_gpio_set_cfgpin(SUNXI_GPC(3), pin_function);
++}
++
++bool is_sun6i_gen_spi(void)
++{
++	return IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I) ||
++	       IS_ENABLED(CONFIG_MACH_SUN50I_H6);
++}
++
++uintptr_t sunxi_spi0_base_address(void)
++{
++	if (IS_ENABLED(CONFIG_MACH_SUN8I_R40))
++		return 0x01C05000;
++
++	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		return 0x05010000;
++
++	if (!is_sun6i_gen_spi())
++		return 0x01C05000;
++
++	return 0x01C68000;
++}
++
++/*
++ * Setup 6 MHz from OSC24M (because the BROM is doing the same).
++ */
++void sunxi_spi0_enable_clock(void)
++{
++	uintptr_t base = sunxi_spi0_base_address();
++
++	/* Deassert SPI0 reset on SUN6I */
++	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		setbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
++	else if (is_sun6i_gen_spi())
++		setbits_le32(SUN6I_BUS_SOFT_RST_REG0,
++			     (1 << AHB_RESET_SPI0_SHIFT));
++
++	/* Open the SPI0 gate */
++	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		setbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
++
++	/* Clock divider */
++	if (IS_ENABLED(CONFIG_SPL_SPI_SUNXI_DIV_4))
++		writel(SPI0_CLK_DIV_BY_4, base + (is_sun6i_gen_spi() ?
++				  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL));
++	else if (IS_ENABLED(CONFIG_SPL_SPI_SUNXI_DIV_2))
++		writel(SPI0_CLK_DIV_BY_2, base + (is_sun6i_gen_spi() ?
++				  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL));
++	else
++		writel(SPI0_CLK_DIV_NONE, base + (is_sun6i_gen_spi() ?
++				  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL));
++
++	/* 24MHz from OSC24M */
++	writel((1 << 31), CCM_SPI0_CLK);
++
++	if (is_sun6i_gen_spi()) {
++		/* Enable SPI in the master mode and do a soft reset */
++		setbits_le32(base + SUN6I_SPI0_GCR, SUN6I_CTL_MASTER |
++			     SUN6I_CTL_ENABLE | SUN6I_CTL_SRST);
++		/* Wait for completion */
++		while (readl(base + SUN6I_SPI0_GCR) & SUN6I_CTL_SRST)
++			;
++	} else {
++		/* Enable SPI in the master mode and reset FIFO */
++		setbits_le32(base + SUN4I_SPI0_CTL, SUN4I_CTL_MASTER |
++						    SUN4I_CTL_ENABLE |
++						    SUN4I_CTL_TF_RST |
++						    SUN4I_CTL_RF_RST);
++	}
++}
++
++void sunxi_spi0_disable_clock(void)
++{
++	uintptr_t base = sunxi_spi0_base_address();
++
++	/* Disable the SPI0 controller */
++	if (is_sun6i_gen_spi())
++		clrbits_le32(base + SUN6I_SPI0_GCR, SUN6I_CTL_MASTER |
++					     SUN6I_CTL_ENABLE);
++	else
++		clrbits_le32(base + SUN4I_SPI0_CTL, SUN4I_CTL_MASTER |
++					     SUN4I_CTL_ENABLE);
++
++	/* Disable the SPI0 clock */
++	writel(0, CCM_SPI0_CLK);
++
++	/* Close the SPI0 gate */
++	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		clrbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
++
++	/* Assert SPI0 reset on SUN6I */
++	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		clrbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
++	else if (is_sun6i_gen_spi())
++		clrbits_le32(SUN6I_BUS_SOFT_RST_REG0,
++			     (1 << AHB_RESET_SPI0_SHIFT));
++}
++
++void sunxi_spi0_init(void)
++{
++	unsigned int pin_function = SUNXI_GPC_SPI0;
++
++	if (IS_ENABLED(CONFIG_MACH_SUN50I) ||
++	    IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++		pin_function = SUN50I_GPC_SPI0;
++
++	sunxi_spi0_pinmux_setup(pin_function);
++	sunxi_spi0_enable_clock();
++}
++
++void sunxi_spi0_deinit(void)
++{
++	/* New SoCs can disable pins, older could only set them as input */
++	unsigned int pin_function = SUNXI_GPIO_INPUT;
++
++	if (is_sun6i_gen_spi())
++		pin_function = SUNXI_GPIO_DISABLE;
++
++	sunxi_spi0_disable_clock();
++	sunxi_spi0_pinmux_setup(pin_function);
++}
+\ No newline at end of file
+diff --git b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.h b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.h
+new file mode 100644
+index 0000000..bec291c
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi.h
+@@ -0,0 +1,131 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2016 Siarhei Siamashka <siarhei.siamashka at gmail.com>
++ */
++
++#include <common.h>
++#include <spl.h>
++#include <asm/gpio.h>
++#include <asm/io.h>
++#include <linux/libfdt.h>
++
++#include <malloc.h>
++#include <fdtdec.h>
++#include <nand.h>
++#include <asm/global_data.h>
++#include <dm/device_compat.h>
++#include <dm/devres.h>
++#include <linux/bitops.h>
++#include <linux/bug.h>
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/errno.h>
++#include <asm/arch/cpu.h>
++#include <linux/mtd/mtd.h>
++#include <linux/types.h>
++#include <syscon.h>
++#include <regmap.h>
++#include <dm/uclass.h>
++#include <dm/read.h>
++
++#ifdef CONFIG_SPL_OS_BOOT
++#error CONFIG_SPL_OS_BOOT is not supported yet
++#endif
++
++/*
++ * This is a very simple U-Boot image loading implementation, trying to
++ * replicate what the boot ROM is doing when loading the SPL. Because we
++ * know the exact pins where the SPI Flash is connected and also know
++ * that the Read Data Bytes (03h) command is supported, the hardware
++ * configuration is very simple and we don't need the extra flexibility
++ * of the SPI framework. Moreover, we rely on the default settings of
++ * the SPI controller hardware registers and only adjust what needs to
++ * be changed. This is good for the code size and this implementation
++ * adds less than 400 bytes to the SPL.
++ *
++ * There are two variants of the SPI controller in Allwinner SoCs:
++ * A10/A13/A20 (sun4i variant) and everything else (sun6i variant).
++ * Both of them are supported.
++ *
++ * The pin mixing part is SoC specific and only A10/A13/A20/H3/A64 are
++ * supported at the moment.
++ */
++
++/*****************************************************************************/
++/* SUN4I variant of the SPI controller                                       */
++/*****************************************************************************/
++
++#define SUN4I_SPI0_CCTL             0x1C
++#define SUN4I_SPI0_CTL              0x08
++#define SUN4I_SPI0_RX               0x00
++#define SUN4I_SPI0_TX               0x04
++#define SUN4I_SPI0_FIFO_STA         0x28
++#define SUN4I_SPI0_BC               0x20
++#define SUN4I_SPI0_TC               0x24
++
++#define SUN4I_CTL_ENABLE            BIT(0)
++#define SUN4I_CTL_MASTER            BIT(1)
++#define SUN4I_CTL_TF_RST            BIT(8)
++#define SUN4I_CTL_RF_RST            BIT(9)
++#define SUN4I_CTL_XCH               BIT(10)
++
++/*****************************************************************************/
++/* SUN6I variant of the SPI controller                                       */
++/*****************************************************************************/
++
++#define SUN6I_SPI0_CCTL             0x24
++#define SUN6I_SPI0_GCR              0x04
++#define SUN6I_SPI0_TCR              0x08
++#define SUN6I_SPI0_FIFO_STA         0x1C
++#define SUN6I_SPI0_MBC              0x30
++#define SUN6I_SPI0_MTC              0x34
++#define SUN6I_SPI0_BCC              0x38
++#define SUN6I_SPI0_TXD              0x200
++#define SUN6I_SPI0_RXD              0x300
++
++#define SUN6I_CTL_ENABLE            BIT(0)
++#define SUN6I_CTL_MASTER            BIT(1)
++#define SUN6I_CTL_SRST              BIT(31)
++#define SUN6I_TCR_XCH               BIT(31)
++
++/*****************************************************************************/
++
++#define CCM_AHB_GATING0             (0x01C20000 + 0x60)
++#define CCM_H6_SPI_BGR_REG          (0x03001000 + 0x96c)
++#ifdef CONFIG_MACH_SUN50I_H6
++#define CCM_SPI0_CLK                (0x03001000 + 0x940)
++#else
++#define CCM_SPI0_CLK                (0x01C20000 + 0xA0)
++#endif
++#define SUN6I_BUS_SOFT_RST_REG0     (0x01C20000 + 0x2C0)
++
++#define AHB_RESET_SPI0_SHIFT        20
++#define AHB_GATE_OFFSET_SPI0        20
++
++#define SPI0_CLK_DIV_NONE			0x0000
++#define SPI0_CLK_DIV_BY_2           0x1000
++#define SPI0_CLK_DIV_BY_4           0x1001
++
++/*****************************************************************************/
++
++/*
++ * Allwinner A10/A20 SoCs were using pins PC0,PC1,PC2,PC23 for booting
++ * from SPI Flash, everything else is using pins PC0,PC1,PC2,PC3.
++ * The H6 uses PC0, PC2, PC3, PC5.
++ */
++void sunxi_spi0_pinmux_setup(unsigned int pin_function);
++
++bool is_sun6i_gen_spi(void);
++
++uintptr_t sunxi_spi0_base_address(void);
++
++/*
++ * Setup 6 MHz from OSC24M (because the BROM is doing the same).
++ */
++void sunxi_spi0_enable_clock(void);
++
++void sunxi_spi0_disable_clock(void);
++
++void sunxi_spi0_init(void);
++
++void sunxi_spi0_deinit(void);
+\ No newline at end of file
+diff --git b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nand.c b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nand.c
+new file mode 100644
+index 0000000..d1f3cd0
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nand.c
+@@ -0,0 +1,496 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2020 Benedikt-Alexander Mokroß <u-boot at bamkrs.de>
++ */
++
++#include "spl_spi_sunxi.h"
++
++/*****************************************************************************/
++
++#define DUMMY_BURST_BYTE			0x00
++
++#ifndef CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE
++#define CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE		0x6000
++#endif
++#ifndef CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING
++#define CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING	0x2000
++#endif
++#ifndef CONFIG_SPL_SPINAND_SUNXI_PAGESIZE
++#define CONFIG_SPL_SPINAND_SUNXI_PAGESIZE		2048
++#endif
++#ifndef CONFIG_SYS_SPI_U_BOOT_OFFS
++#define CONFIG_SYS_SPI_U_BOOT_OFFS (CONFIG_SPL_SPINAND_SUNXI_SPL_SIZE * (CONFIG_SPL_SPINAND_SUNXI_PAGESIZE / 1024)) + CONFIG_SPL_SPINAND_SUNXI_UBOOT_PADDING
++#endif
++
++/*****************************************************************************/
++
++struct sunxi_nand_config {
++	const char *name;
++	u32 jedec_id;
++	u32 page_mask;
++	u8 page_shift;
++	u32 addr_mask;
++	u8 addr_shift;
++};
++
++/*****************************************************************************/
++
++static const char *sunxi_spl_name = "sunxi SPI-NAND";
++
++/**
++ * List of known NANDS. For now, all of them are generic 2k devices.
++ */
++static struct sunxi_nand_config sunxi_known_nands[] = {
++	{
++		.name = "Macronix MX35LF1GE4AB",
++		.jedec_id = 0x00C212C2, /* MX35LFxGE4AB repeat the C2x2 over and over again */
++		.page_mask = 0x00FFFFFF,
++		.page_shift = 11,
++		.addr_mask = 0x7FF,
++		.addr_shift = 0,
++	},
++	{
++		.name = "Macronix MX35LF2GE4AB",
++		.jedec_id = 0x00C222C2,
++		.page_mask = 0x00FFFFFF,
++		.page_shift = 11,
++		.addr_mask = 0x7FF,
++		.addr_shift = 0,
++	},
++	{
++		.name = "Winbond W25N01GVxxIG",
++		.jedec_id = 0x00EFAA21,
++		.page_mask = 0x0000FFFF,
++		.page_shift = 11,
++		.addr_mask = 0x7FF,
++		.addr_shift = 0,
++	},
++	{
++		.name = "GigaDevice GD5F1GQ4RCxxG",
++		.jedec_id = 0x00C8B148, /* 3.3v */
++		.page_mask = 0x00FFFFFF,
++		.page_shift = 11,
++		.addr_mask = 0x7FF,
++		.addr_shift = 0,
++	},
++	{
++		.name = "GigaDevice GD5F1GQ4RCxxG",
++		.jedec_id = 0x00C8A148, /* 1.8V */
++		.page_mask = 0x00FFFFFF,
++		.page_shift = 11,
++		.addr_mask = 0x7FF,
++		.addr_shift = 0,
++	},
++
++	{ /* Sentinel */
++		.name = NULL,
++	}
++};
++
++#ifdef CONFIG_SPL_SPI_SUNXI_NAND_USE_GENERIC2K_ON_UNKNOWN
++/**
++ * Generic 2k device-configuration
++ */
++static struct sunxi_nand_config sunxi_generic_nand_config = {
++	.name = "Generic 2K SPI-NAND",
++	.jedec_id = 0xFFFFFFFF,
++	.page_mask = 0x00FFFFFF,
++	.page_shift = 11,
++	.addr_mask = 0x7FF,
++	.addr_shift = 0,
++};
++#endif
++
++/*
++ * Enumerate all known nands and return the config if found.
++ * Returns NULL if none is found or if CONFIG_SPL_SPI_SUNXI_NAND_USE_GENERIC2K_ON_UNKNOWN
++ * is set, returns a generic configuration compatible to most standard 2k Page-Size SPI-NANDs
++ */
++static struct sunxi_nand_config *sunxi_spinand_enumerate(u32 jedec_id)
++{
++	struct sunxi_nand_config *ptr = sunxi_known_nands;
++
++	while (ptr->name) {
++		if (jedec_id == ptr->jedec_id) {
++			return ptr;
++		}
++		++ptr;
++	}
++#ifdef CONFIG_SPL_SPI_SUNXI_NAND_USE_GENERIC2K_ON_UNKNOWN
++	return &sunxi_generic_nand_config;
++#else
++	return NULL;
++#endif
++}
++
++/*****************************************************************************/
++
++#define SPI_READ_MAX_SIZE 60 /* FIFO size, minus 4 bytes of the header */
++
++/**
++ * Load a page in devices cache
++ */
++static void sunxi_spi0_load_page(struct sunxi_nand_config *config, u32 addr, ulong spi_ctl_reg,
++				 ulong spi_ctl_xch_bitmask,
++				 ulong spi_fifo_reg,
++				 ulong spi_tx_reg,
++				 ulong spi_rx_reg,
++				 ulong spi_bc_reg,
++				 ulong spi_tc_reg,
++				 ulong spi_bcc_reg) {
++    /* Read Page in Cache */
++	u8 status = 0x01;
++
++	addr = addr >> (config->page_shift);
++	addr = addr & config->page_mask;
++
++	writel(4, spi_bc_reg); /* Burst counter (total bytes) */
++	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
++	if (spi_bcc_reg)
++		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
++
++	/* Send the Read Data Bytes (13h) command header */
++	writeb(0x13, spi_tx_reg);
++	writeb((u8)(addr >> 16), spi_tx_reg);
++	writeb((u8)(addr >> 8),  spi_tx_reg);
++	writeb((u8)(addr),       spi_tx_reg);
++
++	/* Start the data transfer */
++	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
++
++	/* Wait till all bytes are send */
++	while ((readl(spi_fifo_reg) & 0x7F0000) > 0)
++		;
++
++    /* wait till all bytes are read */
++	while ((readl(spi_fifo_reg) & 0x7F) < 4)
++		;
++
++	/* Discard the 4 empty bytes from our send */
++	readl(spi_rx_reg);
++
++	/* Wait until page loaded */
++	do {
++		/* tCS = 100ns + tRD_ECC 70ns -> 200ns wait */
++		ndelay(200);
++
++		/* Poll */
++		writel(2 + 1, spi_bc_reg);   /* Burst counter (total bytes) */
++		writel(2, spi_tc_reg);       /* Transfer counter (bytes to send) */
++		if (spi_bcc_reg)
++			writel(2, spi_bcc_reg);  /* SUN6I also needs this */
++		/* Send the Read Status Bytes (0FC0h) command header */
++		writeb(0x0F, spi_tx_reg);
++		writeb(0xC0, spi_tx_reg);
++
++		/* Start the data transfer */
++		setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
++
++		while ((readl(spi_fifo_reg) & 0x7F) < 2 + 1)
++			;
++
++		/* skip 2 since we send 2 */
++	    readb(spi_rx_reg);
++		readb(spi_rx_reg);
++
++		status = readb(spi_rx_reg);
++
++	} while ((status & 0x01) == 0x01);
++}
++
++static void spi0_load_page(struct sunxi_nand_config *config, u32 addr)
++{
++	uintptr_t base = sunxi_spi0_base_address();
++
++	if (is_sun6i_gen_spi()) {
++		sunxi_spi0_load_page(config, addr,
++				     base + SUN6I_SPI0_TCR,
++				     SUN6I_TCR_XCH,
++				     base + SUN6I_SPI0_FIFO_STA,
++				     base + SUN6I_SPI0_TXD,
++				     base + SUN6I_SPI0_RXD,
++				     base + SUN6I_SPI0_MBC,
++				     base + SUN6I_SPI0_MTC,
++				     base + SUN6I_SPI0_BCC);
++	} else {
++		sunxi_spi0_load_page(config, addr,
++				     base + SUN4I_SPI0_CTL,
++				     SUN4I_CTL_XCH,
++				     base + SUN4I_SPI0_FIFO_STA,
++				     base + SUN4I_SPI0_TX,
++				     base + SUN4I_SPI0_RX,
++				     base + SUN4I_SPI0_BC,
++				     base + SUN4I_SPI0_TC,
++				     0);
++	}
++}
++
++/**
++ * Read data from devices cache
++ */
++static void sunxi_spi0_read_cache(struct sunxi_nand_config *config, u8 *buf, u32 addr, u32 bufsize,
++				  ulong spi_ctl_reg,
++				 ulong spi_ctl_xch_bitmask,
++				 ulong spi_fifo_reg,
++				 ulong spi_tx_reg,
++				 ulong spi_rx_reg,
++				 ulong spi_bc_reg,
++				 ulong spi_tc_reg,
++				 ulong spi_bcc_reg)
++{
++	addr = addr >> (config->addr_shift);
++	addr = addr & config->addr_mask;
++
++	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
++	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
++	if (spi_bcc_reg)
++		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
++
++	/* Send the Read Data Bytes (0Bh) command header */
++	writeb(0x0B, spi_tx_reg);
++	writeb((u8)((addr >> 8)), spi_tx_reg);
++	writeb((u8)(addr), spi_tx_reg);
++	writeb(DUMMY_BURST_BYTE, spi_tx_reg);
++
++	/* Start the data transfer */
++	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
++
++	/* Wait until everything is received in the RX FIFO */
++	while ((readl(spi_fifo_reg) & 0x7F) < 4 + bufsize)
++		;
++
++	/* Skip 4 bytes since we send 4 */
++	readl(spi_rx_reg);
++
++	/* Read the data */
++	while (bufsize-- > 0)
++		*buf++ = readb(spi_rx_reg);
++
++	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
++	ndelay(100);
++}
++
++static void spi0_read_cache(struct sunxi_nand_config *config, void *buf, u32 addr, u32 len)
++{
++	uintptr_t base = sunxi_spi0_base_address();
++
++	if (is_sun6i_gen_spi()) {
++			sunxi_spi0_read_cache(config, buf, addr, len,
++					      base + SUN6I_SPI0_TCR,
++					     SUN6I_TCR_XCH,
++					     base + SUN6I_SPI0_FIFO_STA,
++					     base + SUN6I_SPI0_TXD,
++					     base + SUN6I_SPI0_RXD,
++					     base + SUN6I_SPI0_MBC,
++					     base + SUN6I_SPI0_MTC,
++					     base + SUN6I_SPI0_BCC);
++		} else {
++			sunxi_spi0_read_cache(config, buf, addr, len,
++					      base + SUN4I_SPI0_CTL,
++					     SUN4I_CTL_XCH,
++					     base + SUN4I_SPI0_FIFO_STA,
++					     base + SUN4I_SPI0_TX,
++					     base + SUN4I_SPI0_RX,
++					     base + SUN4I_SPI0_BC,
++					     base + SUN4I_SPI0_TC,
++					     0);
++		}
++}
++
++/**
++ * Load (bulk) data to cache an read it
++ * Handles chunking to SPI's buffsize
++ */
++static void spi0_read_data(struct sunxi_nand_config *config, void *buf, u32 addr, u32 len)
++{
++	u8 *buf8 = buf;
++	u32 chunk_len;
++	u32 curr_page;
++	u32 last_page = (addr >> (config->page_shift)) & config->page_mask;
++
++	/* Load first page */
++	spi0_load_page(config, addr);
++
++	while (len > 0) {
++		/* Check if new data must be loaded in cache */
++		curr_page = (addr >> (config->page_shift)) & config->page_mask;
++		if (curr_page > last_page) {
++			spi0_load_page(config, addr);
++			last_page = curr_page;
++		}
++
++		/* Chunk to SPI-Buffers max size */
++		chunk_len = len;
++		if (chunk_len > SPI_READ_MAX_SIZE) {
++			chunk_len = SPI_READ_MAX_SIZE;
++		}
++
++		/* Check if chunk length exceeds page */
++		if ((((addr + chunk_len) >> (config->page_shift)) & config->page_mask) > curr_page) {
++			chunk_len = ((curr_page + 1) << (config->page_shift)) - addr;
++		}
++
++		/* Read data from cache */
++		spi0_read_cache(config, buf8, addr, chunk_len);
++		len  -= chunk_len;
++		buf8 += chunk_len;
++		addr += chunk_len;
++	}
++}
++
++/**
++ * Read ID Bytes register
++ */
++static u32 sunxi_spi0_read_id(ulong spi_ctl_reg,
++			      ulong spi_ctl_xch_bitmask,
++				 ulong spi_fifo_reg,
++				 ulong spi_tx_reg,
++				 ulong spi_rx_reg,
++				 ulong spi_bc_reg,
++				 ulong spi_tc_reg,
++				 ulong spi_bcc_reg)
++{
++	u8 idbuf[3];
++
++	writel(2 + 3, spi_bc_reg); /* Burst counter (total bytes) */
++	writel(2, spi_tc_reg);     /* Transfer counter (bytes to send) */
++	if (spi_bcc_reg)
++		writel(2, spi_bcc_reg);  /* SUN6I also needs this */
++
++	/* Send the Read ID Bytes (9Fh) command header */
++	writeb(0x9F, spi_tx_reg);
++	writeb(DUMMY_BURST_BYTE, spi_tx_reg);
++
++	/* Start the data transfer */
++	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
++
++	/* Wait until everything is received in the RX FIFO */
++	while ((readl(spi_fifo_reg) & 0x7F) < 2 + 3)
++		;
++
++	/* Skip 2 bytes */
++	readb(spi_rx_reg);
++	readb(spi_rx_reg);
++
++	/* Read the data */
++	//while (bufsize-- > 0)
++	idbuf[0] = readb(spi_rx_reg);
++	idbuf[1] = readb(spi_rx_reg);
++	idbuf[2] = readb(spi_rx_reg);
++
++	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
++	ndelay(100);
++
++	return idbuf[2] | (idbuf[1] << 8) | (idbuf[0] << 16);
++}
++
++static u32 spi0_read_id(void)
++{
++	uintptr_t base = sunxi_spi0_base_address();
++
++	if (is_sun6i_gen_spi()) {
++		return sunxi_spi0_read_id(
++				     base + SUN6I_SPI0_TCR,
++				     SUN6I_TCR_XCH,
++				     base + SUN6I_SPI0_FIFO_STA,
++				     base + SUN6I_SPI0_TXD,
++				     base + SUN6I_SPI0_RXD,
++				     base + SUN6I_SPI0_MBC,
++				     base + SUN6I_SPI0_MTC,
++				     base + SUN6I_SPI0_BCC);
++	} else {
++		return sunxi_spi0_read_id(
++				     base + SUN4I_SPI0_CTL,
++				     SUN4I_CTL_XCH,
++				     base + SUN4I_SPI0_FIFO_STA,
++				     base + SUN4I_SPI0_TX,
++				     base + SUN4I_SPI0_RX,
++				     base + SUN4I_SPI0_BC,
++				     base + SUN4I_SPI0_TC,
++				     0);
++	}
++}
++
++static ulong spi_load_read(struct spl_load_info *load, ulong sector, ulong count, void *buf)
++{
++	spi0_read_data((struct sunxi_nand_config *)load->priv, buf, sector, count);
++
++	return count;
++}
++
++/*****************************************************************************/
++
++static int spl_spi_nand_load_image(struct spl_image_info *spl_image,
++				   struct spl_boot_device *bootdev)
++{
++	int ret = 0;
++	u32 id = 0;
++	struct image_header *header;
++	struct sunxi_nand_config *config;
++
++	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE);
++	printf("STARTED .................\n");
++	sunxi_spi0_init();
++	id = spi0_read_id();
++
++	/*
++	 * If we receive only zeros, there is most definetly no device attached.
++	 */
++	if (id == 0) {
++		sunxi_spi0_deinit();
++		printf("%s: Received only zeros on jedec_id probe, assuming no spi-nand attached.\n", sunxi_spl_name);
++		return -1;
++	}
++
++	/*
++	 * Check if device is known and compatible.
++	 */
++	config = sunxi_spinand_enumerate(id);
++	if (!config) {
++		sunxi_spi0_deinit();
++		printf("%s: Unknown chip %x\n", sunxi_spl_name, id);
++		return -1;
++	}
++
++	printf("%s: Found %s (%x)\n", sunxi_spl_name, config->name, id);
++
++	/*
++	 * Read the header data from the image and parse it for validity.
++	 */
++	spi0_read_data(config, (void *)header, CONFIG_SYS_SPI_U_BOOT_OFFS, 0x40);
++	if (image_check_hcrc(header)) {
++		printf("%s: u-boot hcrc OK!\n", sunxi_spl_name);
++
++		/* If it is an FIT-Image, load as FIT, if not, parse header normaly */
++		if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) && image_get_magic(header) == FDT_MAGIC) {
++			struct spl_load_info load;
++
++			debug("%s: Found FIT image\n", sunxi_spl_name);
++			load.dev = NULL;
++			load.priv = (void *)config;
++			load.filename = NULL;
++			load.bl_len = 1;
++			load.read = spi_load_read;
++			ret = spl_load_simple_fit(spl_image, &load, CONFIG_SYS_SPI_U_BOOT_OFFS, header);
++
++		} else {
++			ret = spl_parse_image_header(spl_image, header);
++			if (ret) {
++				printf("%s: spl_parse_image_header: %x\n", sunxi_spl_name, ret);
++				sunxi_spi0_deinit();
++				return ret;
++			}
++			/*
++			 * If everything is fine, read the rest of u-boot and start
++			 */
++			spi0_read_data(config, (void *)spl_image->load_addr, CONFIG_SYS_SPI_U_BOOT_OFFS, spl_image->size);
++			return 0;
++		}
++	}
++	printf("%s: u-boot hcrc ERROR!\n", sunxi_spl_name);
++	sunxi_spi0_deinit();
++	return -1;
++}
++
++/* Use priority 0 to override the default if it happens to be linked in */
++SPL_LOAD_IMAGE_METHOD("sunxi SPI-NAND", 0, BOOT_DEVICE_SPI, spl_spi_nand_load_image);
+\ No newline at end of file
+diff --git b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nor.c b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nor.c
+new file mode 100644
+index 0000000..9d0f81e
+--- /dev/null
++++ b/arch/arm/mach-sunxi/spl/spi/spl_spi_sunxi_nor.c
+@@ -0,0 +1,139 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2016 Siarhei Siamashka <siarhei.siamashka at gmail.com>
++ */
++
++#include "spl_spi_sunxi.h"
++
++/*****************************************************************************/
++
++#define SPI_READ_MAX_SIZE 60 /* FIFO size, minus 4 bytes of the header */
++
++static void sunxi_spi0_read_data(u8 *buf, u32 addr, u32 bufsize,
++				 ulong spi_ctl_reg,
++				 ulong spi_ctl_xch_bitmask,
++				 ulong spi_fifo_reg,
++				 ulong spi_tx_reg,
++				 ulong spi_rx_reg,
++				 ulong spi_bc_reg,
++				 ulong spi_tc_reg,
++				 ulong spi_bcc_reg)
++{
++	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
++	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
++	if (spi_bcc_reg)
++		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
++
++	/* Send the Read Data Bytes (03h) command header */
++	writeb(0x03, spi_tx_reg);
++	writeb((u8)(addr >> 16), spi_tx_reg);
++	writeb((u8)(addr >> 8), spi_tx_reg);
++	writeb((u8)(addr), spi_tx_reg);
++
++	/* Start the data transfer */
++	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
++
++	/* Wait until everything is received in the RX FIFO */
++	while ((readl(spi_fifo_reg) & 0x7F) < 4 + bufsize)
++		;
++
++	/* Skip 4 bytes */
++	readl(spi_rx_reg);
++
++	/* Read the data */
++	while (bufsize-- > 0)
++		*buf++ = readb(spi_rx_reg);
++
++	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
++	udelay(1);
++}
++
++static void spi0_read_data(void *buf, u32 addr, u32 len)
++{
++	u8 *buf8 = buf;
++	u32 chunk_len;
++	uintptr_t base = sunxi_spi0_base_address();
++
++	while (len > 0) {
++		chunk_len = len;
++		if (chunk_len > SPI_READ_MAX_SIZE)
++			chunk_len = SPI_READ_MAX_SIZE;
++
++		if (is_sun6i_gen_spi()) {
++			sunxi_spi0_read_data(buf8, addr, chunk_len,
++					     base + SUN6I_SPI0_TCR,
++					     SUN6I_TCR_XCH,
++					     base + SUN6I_SPI0_FIFO_STA,
++					     base + SUN6I_SPI0_TXD,
++					     base + SUN6I_SPI0_RXD,
++					     base + SUN6I_SPI0_MBC,
++					     base + SUN6I_SPI0_MTC,
++					     base + SUN6I_SPI0_BCC);
++		} else {
++			sunxi_spi0_read_data(buf8, addr, chunk_len,
++					     base + SUN4I_SPI0_CTL,
++					     SUN4I_CTL_XCH,
++					     base + SUN4I_SPI0_FIFO_STA,
++					     base + SUN4I_SPI0_TX,
++					     base + SUN4I_SPI0_RX,
++					     base + SUN4I_SPI0_BC,
++					     base + SUN4I_SPI0_TC,
++					     0);
++		}
++
++		len  -= chunk_len;
++		buf8 += chunk_len;
++		addr += chunk_len;
++	}
++}
++
++static ulong spi_load_read(struct spl_load_info *load, ulong sector,
++			   ulong count, void *buf)
++{
++	spi0_read_data(buf, sector, count);
++
++	return count;
++}
++
++/*****************************************************************************/
++
++static int spl_spi_nor_load_image(struct spl_image_info *spl_image,
++				  struct spl_boot_device *bootdev)
++{
++	int ret = 0;
++	struct image_header *header;
++
++	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE);
++
++	sunxi_spi0_init();
++
++	spi0_read_data((void *)header, CONFIG_SYS_SPI_U_BOOT_OFFS, 0x40);
++
++	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
++	    image_get_magic(header) == FDT_MAGIC) {
++		struct spl_load_info load;
++
++		debug("Found FIT image\n");
++		load.dev = NULL;
++		load.priv = NULL;
++		load.filename = NULL;
++		load.bl_len = 1;
++		load.read = spi_load_read;
++		ret = spl_load_simple_fit(spl_image, &load,
++					  CONFIG_SYS_SPI_U_BOOT_OFFS, header);
++	} else {
++		ret = spl_parse_image_header(spl_image, header);
++		if (ret)
++			return ret;
++
++		spi0_read_data((void *)spl_image->load_addr,
++			       CONFIG_SYS_SPI_U_BOOT_OFFS, spl_image->size);
++	}
++
++	sunxi_spi0_deinit();
++
++	return ret;
++}
++
++/* Use priority 0 to override the default if it happens to be linked in */
++SPL_LOAD_IMAGE_METHOD("sunxi SPI-NOR", 0, BOOT_DEVICE_SPI, spl_spi_nor_load_image);
+\ No newline at end of file
+diff --git a/arch/arm/mach-sunxi/spl_spi_sunxi.c a/arch/arm/mach-sunxi/spl_spi_sunxi.c
+deleted file mode 100644
+index 3499c4c..0000000
+--- a/arch/arm/mach-sunxi/spl_spi_sunxi.c
++++ /dev/null
+@@ -1,364 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * Copyright (C) 2016 Siarhei Siamashka <siarhei.siamashka@gmail.com>
+- */
+-
+-#include <common.h>
+-#include <image.h>
+-#include <log.h>
+-#include <spl.h>
+-#include <asm/arch/spl.h>
+-#include <asm/gpio.h>
+-#include <asm/io.h>
+-#include <linux/bitops.h>
+-#include <linux/delay.h>
+-#include <linux/libfdt.h>
+-
+-#ifdef CONFIG_SPL_OS_BOOT
+-#error CONFIG_SPL_OS_BOOT is not supported yet
+-#endif
+-
+-/*
+- * This is a very simple U-Boot image loading implementation, trying to
+- * replicate what the boot ROM is doing when loading the SPL. Because we
+- * know the exact pins where the SPI Flash is connected and also know
+- * that the Read Data Bytes (03h) command is supported, the hardware
+- * configuration is very simple and we don't need the extra flexibility
+- * of the SPI framework. Moreover, we rely on the default settings of
+- * the SPI controler hardware registers and only adjust what needs to
+- * be changed. This is good for the code size and this implementation
+- * adds less than 400 bytes to the SPL.
+- *
+- * There are two variants of the SPI controller in Allwinner SoCs:
+- * A10/A13/A20 (sun4i variant) and everything else (sun6i variant).
+- * Both of them are supported.
+- *
+- * The pin mixing part is SoC specific and only A10/A13/A20/H3/A64 are
+- * supported at the moment.
+- */
+-
+-/*****************************************************************************/
+-/* SUN4I variant of the SPI controller                                       */
+-/*****************************************************************************/
+-
+-#define SUN4I_SPI0_CCTL             0x1C
+-#define SUN4I_SPI0_CTL              0x08
+-#define SUN4I_SPI0_RX               0x00
+-#define SUN4I_SPI0_TX               0x04
+-#define SUN4I_SPI0_FIFO_STA         0x28
+-#define SUN4I_SPI0_BC               0x20
+-#define SUN4I_SPI0_TC               0x24
+-
+-#define SUN4I_CTL_ENABLE            BIT(0)
+-#define SUN4I_CTL_MASTER            BIT(1)
+-#define SUN4I_CTL_TF_RST            BIT(8)
+-#define SUN4I_CTL_RF_RST            BIT(9)
+-#define SUN4I_CTL_XCH               BIT(10)
+-
+-/*****************************************************************************/
+-/* SUN6I variant of the SPI controller                                       */
+-/*****************************************************************************/
+-
+-#define SUN6I_SPI0_CCTL             0x24
+-#define SUN6I_SPI0_GCR              0x04
+-#define SUN6I_SPI0_TCR              0x08
+-#define SUN6I_SPI0_FIFO_STA         0x1C
+-#define SUN6I_SPI0_MBC              0x30
+-#define SUN6I_SPI0_MTC              0x34
+-#define SUN6I_SPI0_BCC              0x38
+-#define SUN6I_SPI0_TXD              0x200
+-#define SUN6I_SPI0_RXD              0x300
+-
+-#define SUN6I_CTL_ENABLE            BIT(0)
+-#define SUN6I_CTL_MASTER            BIT(1)
+-#define SUN6I_CTL_SRST              BIT(31)
+-#define SUN6I_TCR_XCH               BIT(31)
+-
+-/*****************************************************************************/
+-
+-#define CCM_AHB_GATING0             (0x01C20000 + 0x60)
+-#define CCM_H6_SPI_BGR_REG          (0x03001000 + 0x96c)
+-#ifdef CONFIG_MACH_SUN50I_H6
+-#define CCM_SPI0_CLK                (0x03001000 + 0x940)
+-#else
+-#define CCM_SPI0_CLK                (0x01C20000 + 0xA0)
+-#endif
+-#define SUN6I_BUS_SOFT_RST_REG0     (0x01C20000 + 0x2C0)
+-
+-#define AHB_RESET_SPI0_SHIFT        20
+-#define AHB_GATE_OFFSET_SPI0        20
+-
+-#define SPI0_CLK_DIV_BY_2           0x1000
+-#define SPI0_CLK_DIV_BY_4           0x1001
+-
+-/*****************************************************************************/
+-
+-/*
+- * Allwinner A10/A20 SoCs were using pins PC0,PC1,PC2,PC23 for booting
+- * from SPI Flash, everything else is using pins PC0,PC1,PC2,PC3.
+- * The H6 uses PC0, PC2, PC3, PC5.
+- */
+-static void spi0_pinmux_setup(unsigned int pin_function)
+-{
+-	/* All chips use PC0 and PC2. */
+-	sunxi_gpio_set_cfgpin(SUNXI_GPC(0), pin_function);
+-	sunxi_gpio_set_cfgpin(SUNXI_GPC(2), pin_function);
+-
+-	/* All chips except H6 use PC1, and only H6 uses PC5. */
+-	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		sunxi_gpio_set_cfgpin(SUNXI_GPC(1), pin_function);
+-	else
+-		sunxi_gpio_set_cfgpin(SUNXI_GPC(5), pin_function);
+-
+-	/* Older generations use PC23 for CS, newer ones use PC3. */
+-	if (IS_ENABLED(CONFIG_MACH_SUN4I) || IS_ENABLED(CONFIG_MACH_SUN7I) ||
+-	    IS_ENABLED(CONFIG_MACH_SUN8I_R40))
+-		sunxi_gpio_set_cfgpin(SUNXI_GPC(23), pin_function);
+-	else
+-		sunxi_gpio_set_cfgpin(SUNXI_GPC(3), pin_function);
+-}
+-
+-static bool is_sun6i_gen_spi(void)
+-{
+-	return IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I) ||
+-	       IS_ENABLED(CONFIG_MACH_SUN50I_H6);
+-}
+-
+-static uintptr_t spi0_base_address(void)
+-{
+-	if (IS_ENABLED(CONFIG_MACH_SUN8I_R40))
+-		return 0x01C05000;
+-
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		return 0x05010000;
+-
+-	if (!is_sun6i_gen_spi())
+-		return 0x01C05000;
+-
+-	return 0x01C68000;
+-}
+-
+-/*
+- * Setup 6 MHz from OSC24M (because the BROM is doing the same).
+- */
+-static void spi0_enable_clock(void)
+-{
+-	uintptr_t base = spi0_base_address();
+-
+-	/* Deassert SPI0 reset on SUN6I */
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		setbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
+-	else if (is_sun6i_gen_spi())
+-		setbits_le32(SUN6I_BUS_SOFT_RST_REG0,
+-			     (1 << AHB_RESET_SPI0_SHIFT));
+-
+-	/* Open the SPI0 gate */
+-	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		setbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
+-
+-	/* Divide by 4 */
+-	writel(SPI0_CLK_DIV_BY_4, base + (is_sun6i_gen_spi() ?
+-				  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL));
+-	/* 24MHz from OSC24M */
+-	writel((1 << 31), CCM_SPI0_CLK);
+-
+-	if (is_sun6i_gen_spi()) {
+-		/* Enable SPI in the master mode and do a soft reset */
+-		setbits_le32(base + SUN6I_SPI0_GCR, SUN6I_CTL_MASTER |
+-			     SUN6I_CTL_ENABLE | SUN6I_CTL_SRST);
+-		/* Wait for completion */
+-		while (readl(base + SUN6I_SPI0_GCR) & SUN6I_CTL_SRST)
+-			;
+-	} else {
+-		/* Enable SPI in the master mode and reset FIFO */
+-		setbits_le32(base + SUN4I_SPI0_CTL, SUN4I_CTL_MASTER |
+-						    SUN4I_CTL_ENABLE |
+-						    SUN4I_CTL_TF_RST |
+-						    SUN4I_CTL_RF_RST);
+-	}
+-}
+-
+-static void spi0_disable_clock(void)
+-{
+-	uintptr_t base = spi0_base_address();
+-
+-	/* Disable the SPI0 controller */
+-	if (is_sun6i_gen_spi())
+-		clrbits_le32(base + SUN6I_SPI0_GCR, SUN6I_CTL_MASTER |
+-					     SUN6I_CTL_ENABLE);
+-	else
+-		clrbits_le32(base + SUN4I_SPI0_CTL, SUN4I_CTL_MASTER |
+-					     SUN4I_CTL_ENABLE);
+-
+-	/* Disable the SPI0 clock */
+-	writel(0, CCM_SPI0_CLK);
+-
+-	/* Close the SPI0 gate */
+-	if (!IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		clrbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
+-
+-	/* Assert SPI0 reset on SUN6I */
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		clrbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
+-	else if (is_sun6i_gen_spi())
+-		clrbits_le32(SUN6I_BUS_SOFT_RST_REG0,
+-			     (1 << AHB_RESET_SPI0_SHIFT));
+-}
+-
+-static void spi0_init(void)
+-{
+-	unsigned int pin_function = SUNXI_GPC_SPI0;
+-
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I) ||
+-	    IS_ENABLED(CONFIG_MACH_SUN50I_H6))
+-		pin_function = SUN50I_GPC_SPI0;
+-
+-	spi0_pinmux_setup(pin_function);
+-	spi0_enable_clock();
+-}
+-
+-static void spi0_deinit(void)
+-{
+-	/* New SoCs can disable pins, older could only set them as input */
+-	unsigned int pin_function = SUNXI_GPIO_INPUT;
+-
+-	if (is_sun6i_gen_spi())
+-		pin_function = SUNXI_GPIO_DISABLE;
+-
+-	spi0_disable_clock();
+-	spi0_pinmux_setup(pin_function);
+-}
+-
+-/*****************************************************************************/
+-
+-#define SPI_READ_MAX_SIZE 60 /* FIFO size, minus 4 bytes of the header */
+-
+-static void sunxi_spi0_read_data(u8 *buf, u32 addr, u32 bufsize,
+-				 ulong spi_ctl_reg,
+-				 ulong spi_ctl_xch_bitmask,
+-				 ulong spi_fifo_reg,
+-				 ulong spi_tx_reg,
+-				 ulong spi_rx_reg,
+-				 ulong spi_bc_reg,
+-				 ulong spi_tc_reg,
+-				 ulong spi_bcc_reg)
+-{
+-	writel(4 + bufsize, spi_bc_reg); /* Burst counter (total bytes) */
+-	writel(4, spi_tc_reg);           /* Transfer counter (bytes to send) */
+-	if (spi_bcc_reg)
+-		writel(4, spi_bcc_reg);  /* SUN6I also needs this */
+-
+-	/* Send the Read Data Bytes (03h) command header */
+-	writeb(0x03, spi_tx_reg);
+-	writeb((u8)(addr >> 16), spi_tx_reg);
+-	writeb((u8)(addr >> 8), spi_tx_reg);
+-	writeb((u8)(addr), spi_tx_reg);
+-
+-	/* Start the data transfer */
+-	setbits_le32(spi_ctl_reg, spi_ctl_xch_bitmask);
+-
+-	/* Wait until everything is received in the RX FIFO */
+-	while ((readl(spi_fifo_reg) & 0x7F) < 4 + bufsize)
+-		;
+-
+-	/* Skip 4 bytes */
+-	readl(spi_rx_reg);
+-
+-	/* Read the data */
+-	while (bufsize-- > 0)
+-		*buf++ = readb(spi_rx_reg);
+-
+-	/* tSHSL time is up to 100 ns in various SPI flash datasheets */
+-	udelay(1);
+-}
+-
+-static void spi0_read_data(void *buf, u32 addr, u32 len)
+-{
+-	u8 *buf8 = buf;
+-	u32 chunk_len;
+-	uintptr_t base = spi0_base_address();
+-
+-	while (len > 0) {
+-		chunk_len = len;
+-		if (chunk_len > SPI_READ_MAX_SIZE)
+-			chunk_len = SPI_READ_MAX_SIZE;
+-
+-		if (is_sun6i_gen_spi()) {
+-			sunxi_spi0_read_data(buf8, addr, chunk_len,
+-					     base + SUN6I_SPI0_TCR,
+-					     SUN6I_TCR_XCH,
+-					     base + SUN6I_SPI0_FIFO_STA,
+-					     base + SUN6I_SPI0_TXD,
+-					     base + SUN6I_SPI0_RXD,
+-					     base + SUN6I_SPI0_MBC,
+-					     base + SUN6I_SPI0_MTC,
+-					     base + SUN6I_SPI0_BCC);
+-		} else {
+-			sunxi_spi0_read_data(buf8, addr, chunk_len,
+-					     base + SUN4I_SPI0_CTL,
+-					     SUN4I_CTL_XCH,
+-					     base + SUN4I_SPI0_FIFO_STA,
+-					     base + SUN4I_SPI0_TX,
+-					     base + SUN4I_SPI0_RX,
+-					     base + SUN4I_SPI0_BC,
+-					     base + SUN4I_SPI0_TC,
+-					     0);
+-		}
+-
+-		len  -= chunk_len;
+-		buf8 += chunk_len;
+-		addr += chunk_len;
+-	}
+-}
+-
+-static ulong spi_load_read(struct spl_load_info *load, ulong sector,
+-			   ulong count, void *buf)
+-{
+-	spi0_read_data(buf, sector, count);
+-
+-	return count;
+-}
+-
+-/*****************************************************************************/
+-
+-static int spl_spi_load_image(struct spl_image_info *spl_image,
+-			      struct spl_boot_device *bootdev)
+-{
+-	int ret = 0;
+-	struct image_header *header;
+-	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE);
+-	int load_offset = readl(SPL_ADDR + 0x10);
+-
+-	load_offset = max(load_offset, CONFIG_SYS_SPI_U_BOOT_OFFS);
+-
+-	spi0_init();
+-
+-	spi0_read_data((void *)header, load_offset, 0x40);
+-
+-        if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
+-		image_get_magic(header) == FDT_MAGIC) {
+-		struct spl_load_info load;
+-
+-		debug("Found FIT image\n");
+-		load.dev = NULL;
+-		load.priv = NULL;
+-		load.filename = NULL;
+-		load.bl_len = 1;
+-		load.read = spi_load_read;
+-		ret = spl_load_simple_fit(spl_image, &load,
+-					  load_offset, header);
+-	} else {
+-		ret = spl_parse_image_header(spl_image, header);
+-		if (ret)
+-			return ret;
+-
+-		spi0_read_data((void *)spl_image->load_addr,
+-			       load_offset, spl_image->size);
+-	}
+-
+-	spi0_deinit();
+-
+-	return ret;
+-}
+-/* Use priorty 0 to override the default if it happens to be linked in */
+-SPL_LOAD_IMAGE_METHOD("sunxi SPI", 0, BOOT_DEVICE_SPI, spl_spi_load_image);
