@@ -1,9 +1,9 @@
 diff --git b/configs/cherrpi-v3s_defconfig b/configs/cherrpi-v3s_defconfig
 new file mode 100644
-index 0000000..2212404
+index 0000000..a714713
 --- /dev/null
 +++ b/configs/cherrpi-v3s_defconfig
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,90 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_NR_DRAM_BANKS=1
@@ -86,8 +86,6 @@ index 0000000..2212404
 +CONFIG_CMD_FAT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_MTDPARTS=y
-+CONFIG_MTDIDS_DEFAULT="nand0=sunxi-nand.0"
-+CONFIG_MTDPARTS_DEFAULT="mtdparts=sunxi-nand.0:4m(spl),4m(spl-backup),4m(uboot),4m(env),-(UBI)"
 +CONFIG_NAND_SUNXI=y
 +
 +CONFIG_BOOTDELAY=0
