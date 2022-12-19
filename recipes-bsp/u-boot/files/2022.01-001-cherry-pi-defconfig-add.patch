@@ -1,9 +1,9 @@
 diff --git b/configs/cherrpi-v3s_defconfig b/configs/cherrpi-v3s_defconfig
 new file mode 100644
-index 0000000..f227a84
+index 0000000..2212404
 --- /dev/null
 +++ b/configs/cherrpi-v3s_defconfig
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,92 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_NR_DRAM_BANKS=1
@@ -31,17 +31,20 @@ index 0000000..f227a84
 +CONFIG_ENV_OFFSET=0x68000
 +CONFIG_ENV_SECT_SIZE=0x1000
 +
-+CONFIG_SPI=y
-+CONFIG_DM_SPI=y
-+CONFIG_SPI_SUNXI=y
++### ENV
++# CONFIG_ENV_IS_IN_SPI_FLASH=y
++# CONFIG_ENV_OFFSET=y
++# CONFIG_ENV_SIZE=
++CONFIG_ENV_IS_NOWHERE=y
++# CONFIG_ENV_IS_IN_FLASH=y
++# CONFIG_ENV_OFFSET=0x80000
++# CONFIG_ENV_SIZE=0x02000
 +
 +#
 +# MTD Support
 +#
-+CONFIG_MTD=y
 +CONFIG_DM_MTD=y
 +CONFIG_MTD_NAND_CORE=y
-+CONFIG_MTD_SPI_NAND=y
 +
 +#
 +# SPI Flash Support
@@ -58,6 +61,22 @@ index 0000000..f227a84
 +CONFIG_SPL_SPI_FLASH_MTD=y
 +CONFIG_SPL_MTD_SUPPORT=y
 +
++### NAND
++CONFIG_CLK=y
++CONFIG_CLK_SUNXI=y
++CONFIG_CLK_SUN8I_V3S=y
++CONFIG_SUNXI_SPI=y
++CONFIG_CMD_MTD=y
++CONFIG_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_SPI=y
++CONFIG_SPI_MEM=y
++CONFIG_SPI_SUNXI=y
++CONFIG_SPL_SPINAND_SUNXI=y
++CONFIG_DM=y
++CONFIG_DM_SPI=y
++CONFIG_CMD_DM=y
++
 +#
 +# Filesystem commands
 +#
@@ -73,7 +92,7 @@ index 0000000..f227a84
 +
 +CONFIG_BOOTDELAY=0
 +CONFIG_USE_BOOTARGS=y
-+#CONFIG_BOOTARGS="panic=5 rootwait root=/dev/mtdblock3 rw rootfstype=jffs2"
++CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk panic=5 rootwait mtdparts=spi0.0:1M(uboot)ro,64k(dtb)ro,4M(kernel)ro,-(rootfs) root=mtdblock3 rw rootfstype=jffs2"
 +CONFIG_USE_BOOTCOMMAND=y
-+#CONFIG_BOOTCOMMAND="sf probe 0 50000000;sf read 0x80c00000 0x70000 0x10000;sf read 0x80008000 0x80000 0x4C0000;bootm 0x80008000 - 0x80c00000"
++CONFIG_BOOTCOMMAND="mtd read spi-nand0 $kernel_addr_r 0x0110000 0x400000; mtd read spi-nand0 $fdt_addr_r 0x0100000 0x10000; bootm 0x41000000 - 0x41800000"
 +CONFIG_CONSOLE_MUX=y
