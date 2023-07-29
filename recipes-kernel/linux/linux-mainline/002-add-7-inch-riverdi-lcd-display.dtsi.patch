@@ -1,0 +1,78 @@
+diff --git b/arch/arm/boot/dts/riverdi_7_inch_lcd_display.dtsi b/arch/arm/boot/dts/riverdi_7_inch_lcd_display.dtsi
+new file mode 100644
+index 0000000..5e001d4
+--- /dev/null
++++ b/arch/arm/boot/dts/riverdi_7_inch_lcd_display.dtsi
+@@ -0,0 +1,71 @@
++/**
++*    @mainpage Dts for LCD TFT 800x480 Riverdi 7 inch LCD
++*
++*    @author Michal Wolowik Sofjan
++*    @date Warsaw 28/VII/2023
++*
++*    @copyright
++*        This library is free software; you can redistribute it and/or
++*        modify it under the terms of the GNU Lesser General Public
++*        License as published by the Free Software Foundation; either
++*        version 2.1 of the License, or (at your option) any later version.
++*    @copyright
++*        This library is distributed in the hope that it will be useful,
++*        but WITHOUT ANY WARRANTY; without even the implied warranty of
++*        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++*        Lesser General Public License for more details.
++*/
++
++/ {
++
++vdd_bl: regulator@0 {
++	compatible = "regulator-fixed";
++	regulator-name = "bl-3v3";
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	regulator-always-on;
++};
++
++backlight: backlight {
++	compatible = "gpio-backlight";
++	gpios = <&pio 1 2 GPIO_ACTIVE_HIGH>;
++	default-on;
++	status = "okay";
++};
++
++panel: panel {
++	compatible = "rocktech,rk070er9427", "simple-panel";
++	power-supply = <&vdd_bl>;
++	backlight = <&backlight>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	port@0 {
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			panel_input: endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&tcon0_out_lcd>;
++			};
++		};
++	};
++};
++
++&de {
++	status = "okay";
++};
++
++&tcon0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&lcd_rgb666_pins>;
++	status = "okay";
++};
++
++&tcon0_out {
++	tcon0_out_lcd: endpoint@0 {
++		reg = <0>;
++		remote-endpoint = <&panel_input>;
++	};
++};
+\ No newline at end of file

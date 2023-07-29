@@ -21,7 +21,9 @@ KERNEL_EXTRA_ARGS += "LOADADDR=${UBOOT_ENTRYPOINT}"
 S = "${WORKDIR}/linux-${PV}"
 
 SRC_URI = "https://www.kernel.org/pub/linux/kernel/v5.x/linux-${PV}.tar.xz \
-		file://5.15-001-cherry-pi-dts-add.patch \
+		file://001-add-dts-5.15-001-cherry-pi.patch \
+		file://002-add-7-inch-riverdi-lcd-display.dtsi.patch \
+		file://003-add-7-inch-lcd-touchscreen.dtsi.patch \
         	file://defconfig \
 "
 

@@ -63,6 +63,7 @@ DEV_TOOLS_INSTALL = " \
 "
 
 NETWORK_TOOLS_INSTALL = " \
+	usb-gadget-dhcp \
 "
 
 
@@ -77,6 +78,11 @@ UTILITIES_INSTALL = " \
     resize-rootfs \
     ppp \
     tzdata \
+    parted \
+    e2fsprogs \
+    e2fsprogs-resize2fs \
+    libgpiod \
+    libgpiod-tools \
 "
 
 TSLIB = " \
@@ -95,6 +101,7 @@ WIFI_SUPPORT = " \
 
 IMAGE_INSTALL += " \
   ${QT_DEV_TOOLS} \
+  ${NETWORK_TOOLS_INSTALL} \
   ${DEV_TOOLS_INSTALL} \
   ${SYSTEM_TOOLS_INSTALL} \
   ${UTILITIES_INSTALL} \
