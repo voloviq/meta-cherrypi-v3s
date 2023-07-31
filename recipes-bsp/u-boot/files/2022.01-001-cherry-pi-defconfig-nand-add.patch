@@ -1,8 +1,8 @@
-diff --git b/configs/cherrpi-v3s_defconfig b/configs/cherrpi-v3s_defconfig
+diff --git b/configs/cherrypi-v3s_defconfig b/configs/cherrypi-v3s_defconfig
 new file mode 100644
 index 0000000..a714713
 --- /dev/null
-+++ b/configs/cherrpi-v3s_defconfig
++++ b/configs/cherrypi-v3s_defconfig
 @@ -0,0 +1,90 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
