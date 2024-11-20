@@ -1,4 +1,4 @@
-DESCRIPTION = "A QT5 image with wifi support application for Cherry Pi"
+DESCRIPTION = "A QT5 image with wifi support application for the Cherry Pi Allwinner V3s"
 LICENSE = "MIT"
 
 NETWORK_APP = " \
@@ -6,6 +6,8 @@ NETWORK_APP = " \
 "
 
 IMAGE_LINGUAS = "pl-pl"
+
+DISTRO_FEATURES:remove = "x11 wayland opengl opengles egl xcb"
 
 inherit core-image
 

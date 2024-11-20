@@ -1,63 +1,79 @@
-DESCRIPTION = "A console image for Cherry Pi"
+DESCRIPTION = "A console image for the Cherry Pi Allwinner V3s Board"
 LICENSE = "MIT"
-
-NETWORK_APP = " \
-    openssh openssh-keygen openssh-sftp-server \
-"
 
 IMAGE_LINGUAS = "pl-pl"
 
 inherit core-image
 
+IMAGE_FEATURES += "hwcodecs"
+
+DISTRO_FEATURES:remove = "x11 wayland opengl opengles egl xcb linuxfb"
+
+NETWORK_APP = " \
+    openssh \
+    openssh-keygen \
+    openssh-sftp-server \
+    openssh-sftp \
+"
+
 SYSTEM_TOOLS_INSTALL = " \
     i2c-tools \
-    memtester \
     sysbench \
-    tzdata \
-    devmem2 \
+    rsync \
     minicom \
+    can-utils \
+    mpg123 \
+    mpv \
+    nginx \
+    coreutils \
+    gdbserver \
+    ldd \
+    tzdata \
+    curl \
+    ca-certificates \
+    lsb-release \
+    gnupg \
+    parted \
+    e2fsprogs \
+    e2fsprogs-resize2fs \
+"
+
+CUSTOM_TOOLS_INSTALL = " \
+    resize-rootfs \
+    usb-gadget-dhcp \
+"
+
+CUSTOM_APP_INSTALL = " \
 "
 
 KERNEL_EXTRA_INSTALL = " \
     kernel-devicetree \
     kernel-modules \
- "
-
-UTILITIES_INSTALL = " \
-    coreutils \
-    gdbserver \
-    mtd-utils \
-    ldd \
-    libstdc++ \
-    libstdc++-dev \
-    openssh-sftp \
-    resize-rootfs \
-    ppp \
-    tzdata \
+    kernel-image-zimage \
 "
 
-WIFI_SUPPORT = " \
-    iw \
-    rtl8723bs-wireless \
-    wpa-supplicant \
-    bluez5 \
-    wpa-supplicant-passphrase \
-    wpa-supplicant-cli \
-    network-config-misc \
-    iproute2 \
-    iproute2-tc \
+LIB_PLUGINS_INSTALL = " \
+    libstdc++ \
+    libstdc++-dev \
+    libgpiod \
+    libgpiod-tools \
+    alsa-lib \
+    alsa-plugins \
+"
+
+AUDIO_LIBRARY_INSTALL = " \
+    alsa-tools \
+    alsa-utils \
+    pulseaudio \
+    portaudio-v19 \
 "
 
 IMAGE_INSTALL += " \
-  ${SYSTEM_TOOLS_INSTALL} \
-  ${UTILITIES_INSTALL} \
-  ${NETWORK_APP} \
-  ${WIFI_SUPPORT} \
-  ${KERNEL_EXTRA_INSTALL} \
+    ${NETWORK_APP} \  
+    ${SYSTEM_TOOLS_INSTALL} \
+    ${CUSTOM_TOOLS_INSTALL} \
+    ${CUSTOM_APP_INSTALL} \
+    ${KERNEL_EXTRA_INSTALL} \
+    ${LIB_PLUGINS_INSTALL} \
+    ${AUDIO_LIBRARY_INSTALL} \
 "
-
-#Always add cmake to sdk
-#TOOLCHAIN_HOST_TASK:append = " nativesdk-cmake"
-
-#DISTRO_FEATURES:remove = " x11 wayland opengl pulseaudio opengles egl xcb "
-PACKAGECONFIG_DISTRO:append_pn_qtbase = " linuxfb tslib "
