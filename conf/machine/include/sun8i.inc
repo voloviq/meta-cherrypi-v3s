@@ -1,4 +1,4 @@
-require conf/machine/include/sunxi.inc
+include conf/machine/include/soc-family.inc
 require conf/machine/include/sunxi-mali.inc
 require conf/machine/include/arm/armv7a/tune-cortexa7.inc
 

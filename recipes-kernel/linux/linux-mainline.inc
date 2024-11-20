@@ -7,6 +7,8 @@ inherit kernel
 
 require linux.inc
 
+LINUX_VERSION = "${PV}"
+
 # Since we're not using git, this doesn't make a difference, but we need to fill
 # in something or kernel-yocto.bbclass will fail.
 KBRANCH ?= "master"
@@ -20,11 +22,9 @@ KERNEL_EXTRA_ARGS += "LOADADDR=${UBOOT_ENTRYPOINT}"
 
 S = "${WORKDIR}/linux-${PV}"
 
-SRC_URI = "https://www.kernel.org/pub/linux/kernel/v5.x/linux-${PV}.tar.xz \
-		file://001-add-dts-5.15-001-cherry-pi.patch \
-		file://002-add-7-inch-riverdi-lcd-display.dtsi.patch \
-		file://003-add-7-inch-lcd-touchscreen.dtsi.patch \
-        	file://defconfig \
+SRC_URI = "https://www.kernel.org/pub/linux/kernel/v${KRELEASE}.x/linux-${PV}.tar.xz \
+    file://001-cherry-pi-dts-add.patch \
+	file://defconfig \
 "
 
 SRC_URI:append:use-mailine-graphics = " file://drm.cfg"
