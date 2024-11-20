@@ -28,7 +28,7 @@ TBD <br>
 
 1. First make sure to following packages are installed in system
 
-    ***sudo apt-get install gawk wget diffstat unzip texinfo gcc-multilib build-essential chrpath socat libsdl1.2-dev xterm emscripten libmpc-dev libgmp3-dev***
+    ***sudo apt-get install gawk wget diffstat unzip texinfo gcc-multilib build-essential chrpath socat libsdl1.2-dev xterm emscripten libmpc-dev libgmp3-dev swig***
 
     **Note:**
     More informations can be found on Yocto reference manual.
@@ -38,11 +38,11 @@ TBD <br>
 	***mkdir yocto***<br>
 	***cd yocto*** <br>
 	***mkdir build*** <br>
-	***git clone git://git.yoctoproject.org/poky --depth 1 -b kirkstone*** <br>
+	***git clone git://git.yoctoproject.org/poky --depth 1 -b scarthgap*** <br>
         ***cd poky*** <br>
-	***git clone git://git.openembedded.org/meta-openembedded --depth 1 -b kirkstone*** <br>
-	***git clone https://github.com/meta-qt5/meta-qt5.git --depth 1 -b kirkstone*** <br>
-	***git clone https://github.com/voloviq/meta-cherrypi-v3s --depth 1 -b kirkstone*** <br>
+	***git clone git://git.openembedded.org/meta-openembedded --depth 1 -b scarthgap*** <br>
+	***git clone https://github.com/meta-qt5/meta-qt5.git --depth 1 -b scarthgap*** <br>
+	***git clone https://github.com/voloviq/meta-cherrypi-v3s --depth 1 -b scarthgap*** <br>
 
 3. Select directory to build Linux
 
