@@ -79,7 +79,6 @@ TBD <br>
 	*INHERIT += "rm_work"* <br>
 	*MACHINEOVERRIDES .= ":use-mailine-graphics"* <br>
 	*LICENSE_FLAGS_ACCEPTED = "commercial"* <br>
- 	*export LC_ALL="en_US.UTF-8"* <br>
 	
     - for spi flash change DISTRO ?= "poky" to DISTRO ?= "cherrypi-v3s-tiny" <br>
 
