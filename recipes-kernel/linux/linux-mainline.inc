@@ -22,6 +22,8 @@ KERNEL_EXTRA_ARGS += "LOADADDR=${UBOOT_ENTRYPOINT}"
 
 S = "${WORKDIR}/linux-${PV}"
 
+KRELEASE = "6"
+
 SRC_URI = "https://www.kernel.org/pub/linux/kernel/v${KRELEASE}.x/linux-${PV}.tar.xz \
     file://001-cherry-pi-dts-add.patch \
 	file://defconfig \
