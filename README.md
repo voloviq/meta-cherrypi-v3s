@@ -57,6 +57,7 @@ TBD <br>
       ${HOME}/yocto/poky/meta-poky \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-oe \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-networking \\\
+      ${HOME}/yocto/poky/meta-openembedded/meta-webserver \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-python \\\
       ${HOME}/yocto/poky/meta-openembedded/meta-multimedia \\\
       ${HOME}/yocto/poky/meta-qt5 \\\
