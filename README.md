@@ -88,7 +88,7 @@ TBD <br>
 
 7. Build objects
 
-    - When using SPI NOR Flash use the following image
+    - When using SPI NOR Flash use the the smallest image like core-image-minimal 
     - core image minimal <br>
       ***bitbake core-image-minimal*** <br>
 
@@ -103,7 +103,6 @@ TBD <br>
 
 8. After compilation images appear in
 
-    Nano version <br>
 	*~/yocto/tmp/deploy/images/cherrypi-v3s* <br>
 
 9. Insert SD CARD into the dedicated CARD slot and issue the following command to write an image
