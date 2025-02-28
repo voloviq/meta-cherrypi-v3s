@@ -21,7 +21,7 @@ Example application for GPIO handling
 ## List of not tested elements
 Lcd <br>
 Touchscreen <br>
-
+SPI NOR or NAND not tested <br>
 TBD <br>
 
 ## How to build an images
